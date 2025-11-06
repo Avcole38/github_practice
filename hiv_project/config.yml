@@ -1,4 +1,0 @@
-default:
-  production: FALSE
-  cutpoint: 2
-  
