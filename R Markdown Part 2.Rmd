@@ -1,0 +1,152 @@
+---
+title: "R Markdown Part 2 Notes"
+author: "Ashley Clark"
+date: "2025-09-17"
+output: pdf_document
+params: 
+  production: TRUE
+  cutpoint: 1
+---
+
+```{r,production-or-test, echo=FALSE}
+# we will learn a better approach to this 
+production <- TRUE 
+```
+
+```{r,set-chunk-opts, eval= params$production}
+library(knitr)
+opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE
+)
+```
+
+# RMarkdown Part 2
+## \textcolor{pink}{4.1 Installing Required Packages} 
+
+```{r, Packages,}
+library(labelled)
+library(gtsummary)
+```
+
+## \textcolor{pink}{4.2 Options for creating tables in R markdown}
+
+* Print a data.frame or matrix 
+  	* Easy, but monospaced format
+  	
+* Knitr::kable
+    * Easy, nice looking – not 100% flexible 
+* Gt
+    * Tidyverse compatible syntax, highly flexible, but only html for now 
+* Xtable:xtable 
+    * Highly customizable, but only for pdfs (LaTex based) 
+* Pander::pander
+    * Default tables for different R classes
+* Stargazer::stargazer
+
+## \textcolor{pink}{4.3 Creating Table 1 using gtsummary}
+
+First, create new rmarkdown document 
+```{r, load-data, echo=FALSE}
+Data_url <- "https://bit.ly/vrc01_data"
+Gly <- read.csv(Data_url, header = TRUE)
+```
+## Descriptive Analysis 
+### Tabular analysis 
+Characteristics of the `r nrow(data)` virus from the CATNAP database are displayed in the table below. 
+
+```{r, table1, echo=FALSE}
+library(labelled)
+library(gtsummary)
+var_label(Gly) <- list ( 
+  id = "ID",
+  ab_resistance = "Antibiotic resistance",
+  shield_glycans = "shield",
+  region = "Region",
+  env_length = " Length of Env protein"
+  )
+Gly$number_glycans <- ifelse(Gly$shield_glycans < 4, "< 4",">= 4")
+
+Gly %>% 
+  select("region", "env_length", "ab_resistance", "number_glycans") %>%  
+  tbl_summary(by = number_glycans) %>% 
+modify_spanning_header(c("stat_1","stat_2") ~ "**PNGs in Glycan Shield**") %>% 
+  add_overall() %>%  
+  add_p()
+```
+## \textcolor{pink}{4.5 Fitting and Summarizing Regression Model in R Markdown}
+
+# Regression Analysis 
+## Primary Model
+```{r, fit-primary model}
+mod <- glm(
+  ab_resistance ~ shield_glycans + region + env_length,
+  data = Gly
+)
+tbl_regression(mod) %>% 
+  add_global_p()
+
+```
+## Secondary model 
+
+In this analysis, we generated a binary outcome where level 1 of the outcome means the antibody resistance score was greater than `r params$cutpoint`. 
+
+```{r, secondary-model}
+binary_mod <- glm (
+  I(ab_resistance > params$cutpoint) ~ shield_glycans + region + env_length, 
+  data = Gly,
+  family = binomial ()
+)
+
+tbl_regression(binary_mod, exponentiate = TRUE) %>% 
+  add_global_p()
+```
+
+## \textcolor{pink}{4.6 Adding figures to an R Markdown document }
+
+## Graphical Analysis 
+
+Below we report a scatter plot of antibody resistance as a function of number of PNGs in the glycan shield. 
+```{r, plot-data, echo=FALSE, message=FALSE, fig.align='center', out.width="400px"}
+library(ggplot2)
+
+ggplot(Gly, aes(x=shield_glycans, y= ab_resistance)) +
+  geom_point() +
+  geom_smooth(method=lm) + 
+  theme_classic()
+```
+## \textcolor{pink}{ 4.7 Setting Global Chunk Options}
+
+* Useful if you don't want code chunks to show in rendered rmarkdown document 
+* "Set Chunk Opts at Top"
+
+## \textcolor{pink}{4.8 Dynamically setitng code chunk options}
+
+* production or test chunk at the top 
+  * creates flag if this report was for two different audiences 
+
+## \textcolor{pink}{4.10 Parameterized R Markdown reports}
+
+1. new rmarkdown file? 
+
+option added to yaml header 
+
+"params:" "variable1: 10, variable2: 20, variable3: 30"
+
+```{r,check-variable1}
+print("The value of variable 1 is...")
+print (params$variable1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

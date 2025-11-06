@@ -1,0 +1,22 @@
+---
+title: "Module 7 Notes"
+format: html
+editor: visual
+---
+
+## Git
+
+### 7.1 Motivation for Git
+
+Why formal version control?
+
+-   Painlessly revert to older versions of a document
+-   See history of changes made to a document
+-   Try new things out without breaking things that work
+-   Collaborate with multiple people
+-   Expected skill in modern data science
+-   It's required for this course (lol)
+
+```{r}
+1 + 1
+```

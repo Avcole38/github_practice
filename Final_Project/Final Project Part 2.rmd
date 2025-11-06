@@ -1,0 +1,114 @@
+---
+title: "<center>Final Project Part 2<center>"
+author: "<center>Ashley Clark<center>"
+date: "<center>`r format(Sys.time(), '%b %d, %Y')`<center>"
+output: 
+  html_document:
+    css: styles.css
+    toc: true
+    toc_float: true
+---
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(
+  echo = FALSE,        
+  message = FALSE,    
+  warning = FALSE
+)
+```
+# Introduction 
+The dataset used in this analysis is CDC's Mapping Injury, Overdose and Violence datatset. The dataset is aggregated to the census tract level and contains death counts and rates for drug overdose, suicide, homicide, and firearm related deaths. The first objective of the analysis is to investigate rates of drug overdose mortality in the Southeastern United States. The second objective of this analysis is to investigate the distribution of firearm related deaths in the Southeastern United States.
+
+# Objectives 
+
+1. Investigate rates of drug overdose mortality in the Southeastern United States.
+2. Investigate the distribution of firearm related deaths in the Southeastern United States.
+
+```{r load-data, echo=FALSE}
+injury <- read.csv("Injury_Violence_Data.csv")
+```
+
+```{r data-cleaning, echo=FALSE}
+library(labelled)
+library(gtsummary)
+library(dplyr)
+library(gt)
+library(gtExtras)
+library(ggplot2)
+library(tidyr)
+
+southern_states <- c("Alabama", "Georgia", "Tennessee","Mississippi","South Carolina", "North Carolina","Florida")
+
+south_data <- injury %>% 
+  filter(ST_NAME %in% southern_states, Intent == "Drug_OD") %>% 
+  select(NAME, ST_NAME, Intent, Rate) %>% 
+  mutate(Rate = as.numeric(Rate))
+```
+
+## Table One
+```{r analysis, echo=FALSE}
+overdose_table <- south_data %>% 
+  filter(Intent == "Drug_OD") %>% 
+  group_by(ST_NAME) %>% 
+  summarize(
+    mean_overdose = mean(Rate, na.rm = TRUE),
+    median_overdose = median(Rate, na.rm = TRUE),
+    n_tracts = n()
+  ) %>% 
+  arrange(desc(mean_overdose))
+
+overdose_table %>%
+  gt() %>%
+  cols_label(
+    ST_NAME = "State",
+    mean_overdose = "Overdose Mortality Rate",
+    median_overdose = "Median Overdose Rate",
+    n_tracts = "Number of Census Tracts"
+  ) %>%
+  tab_header(
+    title = "Overdose Mortality Rates by State (Southeastern States), 2025"
+  ) %>% 
+  gtExtras::gt_theme_nytimes()
+```
+
+### Table 1. Overdose Mortality Rates by State, Southeastern States, 2025
+South Carolina and North Carolina reported the highest overdose mortality rates (31.3 and 28.9 per 100,000, respectively), while Alabama reported the lowest (14.4 per 100,000). Tennessee had the highest median rate (31.6 per 100,000), and Florida included the largest number of census tracts (n = 5,032).
+
+```{r figure-analysis,echo=FALSE}
+firearm_data <- injury %>% 
+  filter(ST_NAME %in% southern_states, Intent == "FA_Deaths") %>%
+  group_by(ST_NAME) %>% 
+  summarise(FA_Deaths = sum(as.numeric(Rate),na.rm = TRUE))
+```
+
+```{r figure-one,echo=FALSE}
+firearm_state_totals <- firearm_data %>%
+  mutate(percentage = FA_Deaths / sum(FA_Deaths) * 100,
+         label = paste0(round(percentage, 1), "%"))
+```
+
+
+```{r figure-one-analysis, echo=FALSE, fig.width=8, fig.height=5}
+ggplot(firearm_state_totals, aes(x = "", y = FA_Deaths, fill = ST_NAME)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer(palette = "PuRd") +
+  geom_text(aes(label = label),
+            position = position_stack(vjust = 0.6),
+            color = "white", size = 4, fontface = "bold", family = "Arial") +
+  labs(
+    title = "Firearm Related Deaths in the Southeastern United States, 2025",
+    fill = "State",
+    caption = "out of all firearm-related deaths recorded across the seven southeastern states"
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold", family = "Georgia"),
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10), text = element_text(family = "Arial")
+  )
+```
+
+### Figure 1.Distribution of Firearm-Related Deaths in the Southeastern United States, 2025
+Alabama accounts for the largest share of firearm-related deaths at 26.3%, followed by Florida (17%), Georgia (15%), Mississippi (13.5%), South Carolina (12.3%), Tennessee (12.3%), and North Carolina (3.5%).
+

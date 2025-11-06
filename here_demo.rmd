@@ -1,0 +1,14 @@
+---
+title: "Untitled"
+author: "Ashley Clark"
+date: "2025-09-25"
+output: html_document
+---
+
+
+```{r,here-i-am}
+here::i_am("report/here_demo.Rmd")
+absolute_file_location <- here::here("data/vrc01_data.csv")
+data <- read.csv(absolute_file_location, header = TRUE)
+head(data())
+```
